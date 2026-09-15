@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseCounters • Contadores Dinâmicos</title>
+  <meta name="description" content="Aplicação web moderna e dinâmica para gerenciamento de contadores manuais com arranjo dinâmico, drag-and-drop e estatísticas em tempo real.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Background Glow Accents -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+  <div class="bg-glow bg-glow-3"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-group">
+        <div class="brand-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="4"></rect>
+            <line x1="6" y1="12" x2="10" y2="12"></line>
+            <line x1="8" y1="10" x2="8" y2="14"></line>
+            <line x1="15" y1="12" x2="18" y2="12"></line>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">Pulse<span>Counters</span></h1>
+          <p class="brand-subtitle">Contadores manuais dinâmicos e inteligentes</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="soundToggleBtn" class="btn btn-secondary icon-only" title="Ativar/Desativar Sons de Toque" aria-label="Alternar som">
+          <svg id="soundIconOn" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <svg id="soundIconOff" class="icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+
+        <button id="exportDataBtn" class="btn btn-secondary" title="Exportar dados para backup JSON">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Backup</span>
+        </button>
+
+        <button id="importDataBtn" class="btn btn-secondary" title="Restaurar backup JSON">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <span>Importar</span>
+        </button>
+        <input type="file" id="importFileInput" accept=".json" style="display: none;">
+
+        <button id="openNewModalBtn" class="btn btn-primary pulse-btn">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Novo Contador</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <section class="stats-bar" id="statsBar">
+      <div class="stat-card">
+        <span class="stat-label">Total de Contadores</span>
+        <span class="stat-value" id="statTotalCounters">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Soma de Contagens</span>
+        <span class="stat-value stat-accent" id="statTotalSum">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Maior Contador</span>
+        <div class="stat-sub-container">
+          <span class="stat-value" id="statMaxCount">0</span>
+          <span class="stat-tag" id="statMaxName">-</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Metas Atingidas</span>
+        <span class="stat-value stat-success" id="statGoalsReached">0</span>
+      </div>
+    </section>
+
+    <!-- Controls Toolbar -->
+    <section class="toolbar">
+      <div class="toolbar-search">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Pesquisar contadores por nome ou tag..." autocomplete="off">
+        <button id="clearSearchBtn" class="clear-search-btn hidden">&times;</button>
+      </div>
+
+      <div class="toolbar-filters">
+        <!-- Categories filter tabs -->
+        <div class="category-tabs" id="categoryTabs">
+          <button class="tab-btn active" data-category="all">Todos</button>
+        </div>
+
+        <!-- Sort Select -->
+        <div class="sort-wrapper">
+          <label for="sortSelect">Ordenar por:</label>
+          <select id="sortSelect" class="custom-select">
+            <option value="custom">Arranjo Livre (Drag & Drop)</option>
+            <option value="count-desc">Maior Contagem (Decrescente)</option>
+            <option value="count-asc">Menor Contagem (Crescente)</option>
+            <option value="name-asc">Nome (A - Z)</option>
+            <option value="name-desc">Nome (Z - A)</option>
+            <option value="updated-desc">Mais Recentes</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dynamic Counter Grid -->
+    <main>
+      <div class="counters-grid" id="countersGrid">
+        <!-- Dynamic counter cards are injected here -->
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state hidden" id="emptyState">
+        <div class="empty-icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2" y="4" width="20" height="16" rx="4"></rect>
+            <circle cx="8" cy="12" r="2"></circle>
+            <path d="M14 9h4"></path>
+            <path d="M14 15h4"></path>
+          </svg>
+        </div>
+        <h3 id="emptyStateTitle">Nenhum contador adicionado</h3>
+        <p id="emptyStateDesc">Crie o seu primeiro contador manual para começar a monitorar suas metas, hábitos ou contagens diárias!</p>
+        <button id="emptyStateAddBtn" class="btn btn-primary">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Adicionar Contador
+        </button>
+      </div>
+    </main>
+
+    <!-- Footer info -->
+    <footer class="app-footer">
+      <div class="drag-hint">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"></path>
+        </svg>
+        <span><strong>Dica:</strong> Arraste e solte qualquer cartão para reordenar dinamicamente os contadores na sua preferência.</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modal: Adicionar / Editar Contador -->
+  <div class="modal-overlay hidden" id="counterModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modalTitle">Novo Contador</h2>
+        <button class="modal-close-btn" id="closeModalBtn">&times;</button>
+      </div>
+      <form id="counterForm">
+        <input type="hidden" id="formCounterId">
+
+        <div class="form-group">
+          <label for="formTitle">Nome do Contador *</label>
+          <input type="text" id="formTitle" placeholder="Ex: Copos de Água, Tarefas Feitas, Estoque..." required maxlength="40">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="formInitialValue">Valor Inicial</label>
+            <input type="number" id="formInitialValue" value="0" step="1">
+          </div>
+          <div class="form-group">
+            <label for="formStep">Passo (Incremento) *</label>
+            <input type="number" id="formStep" value="1" min="1" step="1" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="formCategory">Categoria / Tag</label>
+            <input type="text" id="formCategory" placeholder="Ex: Hábitos, Trabalho, Fitness..." maxlength="20">
+          </div>
+          <div class="form-group">
+            <label for="formTarget">Meta / Objetivo (Opcional)</label>
+            <input type="number" id="formTarget" placeholder="Ex: 10, 50, 100" min="1" step="1">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Cor Temática do Contador</label>
+          <div class="color-picker-grid" id="colorPickerGrid">
+            <!-- Dynamic color choices -->
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelModalBtn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="saveCounterBtn">Salvar Contador</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmação de Reset / Exclusão -->
+  <div class="modal-overlay hidden" id="confirmModal">
+    <div class="modal-card confirm-modal-card">
+      <div class="confirm-icon-box" id="confirmIconBox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+      </div>
+      <h3 id="confirmTitle">Tem certeza?</h3>
+      <p id="confirmMessage">Esta ação não poderá ser desfeita.</p>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="confirmCancelBtn">Cancelar</button>
+        <button class="btn btn-danger" id="confirmActionBtn">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
