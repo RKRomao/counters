@@ -1102,3 +1102,100 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   Modo Foco (Apenas Contadores)
+   ========================================================================== */
+body.focus-mode .app-header,
+body.focus-mode .stats-bar,
+body.focus-mode .toolbar,
+body.focus-mode .app-footer,
+body.focus-mode .counter-drag-handle,
+body.focus-mode .counter-menu-actions,
+body.focus-mode .counter-quick-steps,
+body.focus-mode .counter-edit-hint {
+  display: none !important;
+}
+
+body.focus-mode .app-container {
+  padding-top: 1.5rem;
+  max-width: 1400px;
+}
+
+body.focus-mode .counters-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+body.focus-mode .counter-card {
+  padding: 1.75rem 1.4rem;
+  gap: 1.1rem;
+  box-shadow: var(--shadow-md);
+  border-width: 1.5px;
+}
+
+body.focus-mode .counter-title {
+  font-size: 1.35rem;
+  text-align: center;
+}
+
+body.focus-mode .counter-header {
+  justify-content: center;
+}
+
+body.focus-mode .counter-info {
+  text-align: center;
+}
+
+body.focus-mode .counter-value {
+  font-size: 4.2rem;
+}
+
+body.focus-mode .btn-count-main {
+  height: 68px;
+  font-size: 2.2rem;
+}
+
+/* Floating Exit Focus Mode Button */
+.exit-focus-floating-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 999;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1.5rem;
+  background: rgba(22, 27, 46, 0.92);
+  border: 1.5px solid var(--primary);
+  color: #fff;
+  border-radius: var(--radius-full);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 25px var(--primary-glow);
+  backdrop-filter: var(--glass-blur);
+  animation: floatUpBtn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: var(--transition-normal);
+}
+
+.exit-focus-floating-btn:hover {
+  background: var(--primary);
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 14px 40px var(--primary-glow);
+}
+
+.exit-focus-floating-btn:active {
+  transform: translateY(0);
+}
+
+.exit-focus-floating-btn .icon {
+  width: 20px;
+  height: 20px;
+}
+
+@keyframes floatUpBtn {
+  0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}

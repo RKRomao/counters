@@ -70,6 +70,7 @@ class PulseCountersApp {
     this.sortBy = 'custom';
     this.selectedColor = COLOR_THEMES[0].hex;
     this.draggedCounterId = null;
+    this.focusMode = false;
 
     // Audio Context (Synthesizer)
     this.audioCtx = null;
@@ -217,6 +218,8 @@ class PulseCountersApp {
     this.exportDataBtn = document.getElementById('exportDataBtn');
     this.importDataBtn = document.getElementById('importDataBtn');
     this.importFileInput = document.getElementById('importFileInput');
+    this.focusModeBtn = document.getElementById('focusModeBtn');
+    this.exitFocusFloatingBtn = document.getElementById('exitFocusFloatingBtn');
 
     // Modal Form
     this.counterModal = document.getElementById('counterModal');
@@ -337,13 +340,41 @@ class PulseCountersApp {
       if (e.target === this.confirmModal) this.closeConfirmModal();
     });
 
+    // Focus Mode (Apenas Contadores)
+    if (this.focusModeBtn) {
+      this.focusModeBtn.addEventListener('click', () => this.toggleFocusMode());
+    }
+    if (this.exitFocusFloatingBtn) {
+      this.exitFocusFloatingBtn.addEventListener('click', () => this.toggleFocusMode(false));
+    }
+
     // Escape key
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         this.closeCounterModal();
         this.closeConfirmModal();
+        if (this.focusMode) {
+          this.toggleFocusMode(false);
+        }
       }
     });
+  }
+
+  // ==========================================
+  // Focus Mode (Apenas Contadores)
+  // ==========================================
+  toggleFocusMode(forceState = null) {
+    this.focusMode = forceState !== null ? forceState : !this.focusMode;
+    document.body.classList.toggle('focus-mode', this.focusMode);
+    
+    if (this.exitFocusFloatingBtn) {
+      this.exitFocusFloatingBtn.classList.toggle('hidden', !this.focusMode);
+    }
+    if (this.focusModeBtn) {
+      this.focusModeBtn.classList.toggle('active', this.focusMode);
+    }
+
+    this.playSound(this.focusMode ? 'goal' : 'up');
   }
 
   // ==========================================
