@@ -6,35 +6,77 @@
   <title>PulseCounters • Contadores Dinâmicos</title>
   <meta name="description" content="Aplicação web moderna e dinâmica para gerenciamento de contadores manuais com arranjo dinâmico, drag-and-drop e estatísticas em tempo real.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=corp3">
 </head>
-<body>
-  <!-- Background Glow Accents -->
-  <div class="bg-glow bg-glow-1"></div>
-  <div class="bg-glow bg-glow-2"></div>
-  <div class="bg-glow bg-glow-3"></div>
-
+<body class="theme-light">
   <div class="app-container">
-    <!-- Header -->
+    <!-- Header Corporativo -->
     <header class="app-header">
       <div class="brand-group">
-        <div class="brand-logo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="4" width="20" height="16" rx="4"></rect>
-            <line x1="6" y1="12" x2="10" y2="12"></line>
-            <line x1="8" y1="10" x2="8" y2="14"></line>
-            <line x1="15" y1="12" x2="18" y2="12"></line>
+        <div class="brand-logo" title="PulseCounters Enterprise">
+          <!-- Ícone Executivo de Analytics / Métricas -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"></path>
+            <rect x="7" y="10" width="3" height="8" rx="1"></rect>
+            <rect x="12" y="5" width="3" height="13" rx="1"></rect>
+            <rect x="17" y="8" width="3" height="10" rx="1"></rect>
           </svg>
         </div>
-        <div>
-          <h1 class="brand-title">Pulse<span>Counters</span></h1>
-          <p class="brand-subtitle">Contadores manuais dinâmicos e inteligentes</p>
+        <div class="brand-text">
+          <div class="brand-title-row">
+            <h1 class="brand-title">Pulse<span>Counters</span></h1>
+            <span class="corp-badge">Enterprise</span>
+          </div>
+          <p class="brand-subtitle">Painel Corporativo de Indicadores e Contagens</p>
         </div>
       </div>
 
       <div class="header-actions">
+        <!-- Alternador de Tema Claro / Escuro -->
+        <button id="themeToggleBtn" class="btn btn-secondary" title="Alternar entre Modo Claro e Escuro" aria-label="Alternar tema">
+          <svg id="themeIconSun" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg id="themeIconMoon" class="icon hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <span id="themeBtnLabel">Tema</span>
+        </button>
+
+        <!-- Alternador de Visão (Grid vs Tabela) -->
+        <div class="view-switch-group" role="group" aria-label="Modo de visualização">
+          <button id="viewGridBtn" class="btn btn-view active" title="Visualização em Cartões">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+            </svg>
+            <span>Cartões</span>
+          </button>
+          <button id="viewTableBtn" class="btn btn-view" title="Visualização em Tabela Corporativa">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            <span>Tabela</span>
+          </button>
+        </div>
+
         <button id="soundToggleBtn" class="btn btn-secondary icon-only" title="Ativar/Desativar Sons de Toque" aria-label="Alternar som">
           <svg id="soundIconOn" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -70,10 +112,10 @@
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
           </svg>
-          <span>Apenas Contadores</span>
+          <span>Modo Foco</span>
         </button>
 
-        <button id="openNewModalBtn" class="btn btn-primary pulse-btn">
+        <button id="openNewModalBtn" class="btn btn-primary">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -138,10 +180,29 @@
       </div>
     </section>
 
-    <!-- Dynamic Counter Grid -->
+    <!-- Dynamic Counter Grid & Enterprise Table Views -->
     <main>
       <div class="counters-grid" id="countersGrid">
         <!-- Dynamic counter cards are injected here -->
+      </div>
+
+      <div class="counters-table-container hidden" id="countersTableContainer">
+        <table class="corp-table" id="countersTable">
+          <thead>
+            <tr>
+              <th style="width: 40px;"></th>
+              <th>Indicador / Contador</th>
+              <th>Categoria</th>
+              <th style="text-align: center;">Contagem Atual</th>
+              <th>Meta & Progresso</th>
+              <th style="text-align: center;">Ajuste Rápido</th>
+              <th style="text-align: right; width: 100px;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="countersTableBody">
+            <!-- Table rows injected dynamically -->
+          </tbody>
+        </table>
       </div>
 
       <!-- Empty State -->

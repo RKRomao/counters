@@ -1,19 +1,20 @@
 /**
- * PulseCounters - Dynamic Counters Web App
- * State management, Drag & Drop, Web Audio synthesizer, filtering, and local storage.
+ * PulseCounters - Enterprise Dynamic Counters Web App
+ * State management, Dual Theme (Light/Dark), Data Table & Grid Views,
+ * Drag & Drop, Web Audio synthesizer, and local storage.
  */
 
-// Color Palette Themes for Counters
+// Corporate Color Palette for Counters
 const COLOR_THEMES = [
-  { name: 'Indigo', hex: '#6366f1', glow: 'rgba(99, 102, 241, 0.4)' },
-  { name: 'Cyan', hex: '#06b6d4', glow: 'rgba(6, 182, 212, 0.4)' },
-  { name: 'Esmeralda', hex: '#10b981', glow: 'rgba(16, 185, 129, 0.4)' },
-  { name: 'Âmbar', hex: '#f59e0b', glow: 'rgba(245, 158, 11, 0.4)' },
-  { name: 'Rosa', hex: '#f43f5e', glow: 'rgba(244, 63, 94, 0.4)' },
-  { name: 'Roxo', hex: '#a855f7', glow: 'rgba(168, 85, 247, 0.4)' }
+  { name: 'Azul Corporativo', hex: '#2563eb', glow: 'rgba(37, 99, 235, 0.25)' },
+  { name: 'Grafite Ardósia', hex: '#64748b', glow: 'rgba(100, 116, 139, 0.25)' },
+  { name: 'Esmeralda Operacional', hex: '#059669', glow: 'rgba(5, 150, 105, 0.25)' },
+  { name: 'Âmbar Executivo', hex: '#d97706', glow: 'rgba(217, 119, 6, 0.25)' },
+  { name: 'Borgonha', hex: '#be123c', glow: 'rgba(190, 18, 60, 0.25)' },
+  { name: 'Azul Petróleo', hex: '#0284c7', glow: 'rgba(2, 132, 199, 0.25)' }
 ];
 
-// Initial Seed Data (if first time opening)
+// Initial Seed Data (Corporate metrics defaults)
 const DEFAULT_COUNTERS = [
   {
     id: 'cnt_1',
@@ -22,7 +23,7 @@ const DEFAULT_COUNTERS = [
     step: 1,
     category: 'Saúde',
     target: 8,
-    color: '#06b6d4',
+    color: '#0284c7',
     createdAt: Date.now() - 3600000 * 5,
     updatedAt: Date.now() - 1800000
   },
@@ -33,7 +34,7 @@ const DEFAULT_COUNTERS = [
     step: 1,
     category: 'Trabalho',
     target: 15,
-    color: '#6366f1',
+    color: '#2563eb',
     createdAt: Date.now() - 3600000 * 4,
     updatedAt: Date.now() - 600000
   },
@@ -44,7 +45,7 @@ const DEFAULT_COUNTERS = [
     step: 5,
     category: 'Estudo',
     target: 50,
-    color: '#10b981',
+    color: '#059669',
     createdAt: Date.now() - 3600000 * 3,
     updatedAt: Date.now() - 1200000
   },
@@ -55,7 +56,7 @@ const DEFAULT_COUNTERS = [
     step: 1,
     category: 'Saúde',
     target: 4,
-    color: '#a855f7',
+    color: '#64748b',
     createdAt: Date.now() - 3600000 * 2,
     updatedAt: Date.now() - 300000
   }
@@ -65,6 +66,8 @@ class PulseCountersApp {
   constructor() {
     this.counters = [];
     this.soundEnabled = true;
+    this.theme = 'light'; // Default to clean corporate light
+    this.viewMode = 'grid'; // 'grid' or 'table'
     this.activeCategory = 'all';
     this.searchQuery = '';
     this.sortBy = 'custom';
@@ -84,6 +87,7 @@ class PulseCountersApp {
   init() {
     this.loadState();
     this.initDOMElements();
+    this.applyTheme();
     this.renderColorPicker();
     this.bindEvents();
     this.render();
@@ -94,6 +98,18 @@ class PulseCountersApp {
   // ==========================================
   loadState() {
     try {
+      // Load Theme preference
+      const storedTheme = localStorage.getItem('pulse_counters_theme');
+      if (storedTheme === 'dark' || storedTheme === 'light') {
+        this.theme = storedTheme;
+      }
+
+      // Load View preference
+      const storedView = localStorage.getItem('pulse_counters_view');
+      if (storedView === 'table' || storedView === 'grid') {
+        this.viewMode = storedView;
+      }
+
       const stored = localStorage.getItem('pulse_counters_data');
       if (stored) {
         this.counters = JSON.parse(stored);
@@ -101,6 +117,21 @@ class PulseCountersApp {
         this.counters = [...DEFAULT_COUNTERS];
         this.saveState();
       }
+
+      // Auto-migrate legacy bright colors to corporate palette
+      const LEGACY_COLOR_MAP = {
+        '#6366f1': '#2563eb',
+        '#a855f7': '#64748b',
+        '#f43f5e': '#be123c',
+        '#06b6d4': '#0284c7',
+        '#10b981': '#059669',
+        '#f59e0b': '#d97706'
+      };
+      this.counters.forEach(c => {
+        if (LEGACY_COLOR_MAP[c.color]) {
+          c.color = LEGACY_COLOR_MAP[c.color];
+        }
+      });
 
       const soundPref = localStorage.getItem('pulse_counters_sound');
       this.soundEnabled = soundPref !== null ? JSON.parse(soundPref) : true;
@@ -114,9 +145,54 @@ class PulseCountersApp {
     try {
       localStorage.setItem('pulse_counters_data', JSON.stringify(this.counters));
       localStorage.setItem('pulse_counters_sound', JSON.stringify(this.soundEnabled));
+      localStorage.setItem('pulse_counters_theme', this.theme);
+      localStorage.setItem('pulse_counters_view', this.viewMode);
     } catch (e) {
       console.error('Erro ao salvar dados no LocalStorage:', e);
     }
+  }
+
+  // ==========================================
+  // Theme Management (Light vs Dark)
+  // ==========================================
+  applyTheme() {
+    document.body.classList.remove('theme-light', 'theme-dark');
+    document.body.classList.add(this.theme === 'dark' ? 'theme-dark' : 'theme-light');
+    if (this.focusMode) {
+      document.body.classList.add('focus-mode');
+    }
+
+    if (this.themeIconSun && this.themeIconMoon && this.themeBtnLabel) {
+      if (this.theme === 'dark') {
+        this.themeIconSun.classList.add('hidden');
+        this.themeIconMoon.classList.remove('hidden');
+        this.themeBtnLabel.textContent = 'Modo Escuro';
+      } else {
+        this.themeIconSun.classList.remove('hidden');
+        this.themeIconMoon.classList.add('hidden');
+        this.themeBtnLabel.textContent = 'Modo Claro';
+      }
+    }
+  }
+
+  toggleTheme() {
+    this.theme = this.theme === 'dark' ? 'light' : 'dark';
+    this.saveState();
+    this.applyTheme();
+    this.playSound('up');
+  }
+
+  setViewMode(mode) {
+    if (mode !== 'grid' && mode !== 'table') return;
+    this.viewMode = mode;
+    this.saveState();
+
+    if (this.viewGridBtn && this.viewTableBtn) {
+      this.viewGridBtn.classList.toggle('active', mode === 'grid');
+      this.viewTableBtn.classList.toggle('active', mode === 'table');
+    }
+
+    this.render();
   }
 
   // ==========================================
@@ -149,41 +225,40 @@ class PulseCountersApp {
 
       if (type === 'up') {
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(560, now);
-        osc.frequency.exponentialRampToValueAtTime(740, now + 0.08);
-        gain.gain.setValueAtTime(0.2, now);
+        osc.frequency.setValueAtTime(540, now);
+        osc.frequency.exponentialRampToValueAtTime(720, now + 0.08);
+        gain.gain.setValueAtTime(0.15, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
         osc.start(now);
         osc.stop(now + 0.09);
       } else if (type === 'down') {
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(420, now);
-        osc.frequency.exponentialRampToValueAtTime(300, now + 0.08);
-        gain.gain.setValueAtTime(0.2, now);
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(280, now + 0.08);
+        gain.gain.setValueAtTime(0.15, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
         osc.start(now);
         osc.stop(now + 0.09);
       } else if (type === 'goal') {
-        // Goal achieved fanfare
-        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        const notes = [523.25, 659.25, 783.99, 1046.50];
         notes.forEach((freq, idx) => {
           const noteOsc = this.audioCtx.createOscillator();
           const noteGain = this.audioCtx.createGain();
           noteOsc.connect(noteGain);
           noteGain.connect(this.audioCtx.destination);
 
-          const startTime = now + (idx * 0.07);
+          const startTime = now + (idx * 0.06);
           noteOsc.type = 'sine';
           noteOsc.frequency.setValueAtTime(freq, startTime);
-          noteGain.gain.setValueAtTime(0.18, startTime);
-          noteGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.18);
+          noteGain.gain.setValueAtTime(0.15, startTime);
+          noteGain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.16);
 
           noteOsc.start(startTime);
-          noteOsc.stop(startTime + 0.18);
+          noteOsc.stop(startTime + 0.16);
         });
       }
     } catch (err) {
-      console.warn('Áudio não disponível:', err);
+      console.warn('Áudio indisponível:', err);
     }
   }
 
@@ -192,9 +267,19 @@ class PulseCountersApp {
   // ==========================================
   initDOMElements() {
     this.countersGrid = document.getElementById('countersGrid');
+    this.countersTableContainer = document.getElementById('countersTableContainer');
+    this.countersTableBody = document.getElementById('countersTableBody');
     this.emptyState = document.getElementById('emptyState');
     this.emptyStateTitle = document.getElementById('emptyStateTitle');
     this.emptyStateDesc = document.getElementById('emptyStateDesc');
+
+    // Theme & View Controls
+    this.themeToggleBtn = document.getElementById('themeToggleBtn');
+    this.themeIconSun = document.getElementById('themeIconSun');
+    this.themeIconMoon = document.getElementById('themeIconMoon');
+    this.themeBtnLabel = document.getElementById('themeBtnLabel');
+    this.viewGridBtn = document.getElementById('viewGridBtn');
+    this.viewTableBtn = document.getElementById('viewTableBtn');
 
     // Stats
     this.statTotalCounters = document.getElementById('statTotalCounters');
@@ -243,6 +328,11 @@ class PulseCountersApp {
     this.confirmActionBtn = document.getElementById('confirmActionBtn');
 
     this.updateSoundIcon();
+
+    if (this.viewGridBtn && this.viewTableBtn) {
+      this.viewGridBtn.classList.toggle('active', this.viewMode === 'grid');
+      this.viewTableBtn.classList.toggle('active', this.viewMode === 'table');
+    }
   }
 
   updateSoundIcon() {
@@ -278,6 +368,19 @@ class PulseCountersApp {
   // Event Bindings
   // ==========================================
   bindEvents() {
+    // Theme Toggle
+    if (this.themeToggleBtn) {
+      this.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
+    }
+
+    // View Mode Toggle
+    if (this.viewGridBtn) {
+      this.viewGridBtn.addEventListener('click', () => this.setViewMode('grid'));
+    }
+    if (this.viewTableBtn) {
+      this.viewTableBtn.addEventListener('click', () => this.setViewMode('table'));
+    }
+
     // Sound Toggle
     this.soundToggleBtn.addEventListener('click', () => {
       this.soundEnabled = !this.soundEnabled;
@@ -340,7 +443,7 @@ class PulseCountersApp {
       if (e.target === this.confirmModal) this.closeConfirmModal();
     });
 
-    // Focus Mode (Apenas Contadores)
+    // Focus Mode
     if (this.focusModeBtn) {
       this.focusModeBtn.addEventListener('click', () => this.toggleFocusMode());
     }
@@ -361,7 +464,7 @@ class PulseCountersApp {
   }
 
   // ==========================================
-  // Focus Mode (Apenas Contadores)
+  // Focus Mode
   // ==========================================
   toggleFocusMode(forceState = null) {
     this.focusMode = forceState !== null ? forceState : !this.focusMode;
@@ -388,7 +491,6 @@ class PulseCountersApp {
     counter.count += amount;
     counter.updatedAt = Date.now();
 
-    // Check target reached
     if (counter.target && prevCount < counter.target && counter.count >= counter.target) {
       this.playSound('goal');
     } else {
@@ -444,7 +546,7 @@ class PulseCountersApp {
 
     this.showConfirmDialog(
       'Excluir Contador',
-      `Tem certeza que deseja apagar permanentemente o contador "${counter.title}"?`,
+      `Tem certeza que deseja excluir o contador "${counter.title}"?`,
       () => {
         this.counters = this.counters.filter(c => c.id !== id);
         this.playSound('down');
@@ -476,9 +578,7 @@ class PulseCountersApp {
       this.counterForm.reset();
       this.formInitialValue.value = 0;
       this.formStep.value = 1;
-      // Cycle initial color
-      const randomColor = COLOR_THEMES[Math.floor(Math.random() * COLOR_THEMES.length)].hex;
-      this.selectedColor = randomColor;
+      this.selectedColor = COLOR_THEMES[0].hex;
     }
 
     this.renderColorPicker();
@@ -503,7 +603,6 @@ class PulseCountersApp {
     if (!title) return;
 
     if (id) {
-      // Edit existing
       const counter = this.counters.find(c => c.id === id);
       if (counter) {
         counter.title = title;
@@ -515,7 +614,6 @@ class PulseCountersApp {
         counter.updatedAt = Date.now();
       }
     } else {
-      // Create new
       const newCounter = {
         id: 'cnt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
         title,
@@ -527,7 +625,6 @@ class PulseCountersApp {
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
-      // Place at front of list
       this.counters.unshift(newCounter);
     }
 
@@ -599,37 +696,37 @@ class PulseCountersApp {
   // ==========================================
   // Drag & Drop Sorting
   // ==========================================
-  attachDragEvents(cardEl, counterId) {
-    cardEl.setAttribute('draggable', 'true');
+  attachDragEvents(el, counterId) {
+    el.setAttribute('draggable', 'true');
 
-    cardEl.addEventListener('dragstart', (e) => {
+    el.addEventListener('dragstart', (e) => {
       this.draggedCounterId = counterId;
-      cardEl.classList.add('is-dragging');
+      el.classList.add('is-dragging');
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', counterId);
     });
 
-    cardEl.addEventListener('dragend', () => {
-      cardEl.classList.remove('is-dragging');
-      document.querySelectorAll('.counter-card').forEach(c => c.classList.remove('drag-over'));
+    el.addEventListener('dragend', () => {
+      el.classList.remove('is-dragging');
+      document.querySelectorAll('.counter-card, .corp-table-row').forEach(c => c.classList.remove('drag-over'));
       this.draggedCounterId = null;
     });
 
-    cardEl.addEventListener('dragover', (e) => {
+    el.addEventListener('dragover', (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       if (this.draggedCounterId && this.draggedCounterId !== counterId) {
-        cardEl.classList.add('drag-over');
+        el.classList.add('drag-over');
       }
     });
 
-    cardEl.addEventListener('dragleave', () => {
-      cardEl.classList.remove('drag-over');
+    el.addEventListener('dragleave', () => {
+      el.classList.remove('drag-over');
     });
 
-    cardEl.addEventListener('drop', (e) => {
+    el.addEventListener('drop', (e) => {
       e.preventDefault();
-      cardEl.classList.remove('drag-over');
+      el.classList.remove('drag-over');
       if (this.draggedCounterId && this.draggedCounterId !== counterId) {
         this.reorderCounters(this.draggedCounterId, counterId);
       }
@@ -642,11 +739,9 @@ class PulseCountersApp {
 
     if (sourceIndex === -1 || targetIndex === -1) return;
 
-    // Move source to target position
     const [movedItem] = this.counters.splice(sourceIndex, 1);
     this.counters.splice(targetIndex, 0, movedItem);
 
-    // Switch sort dropdown to custom
     this.sortBy = 'custom';
     this.sortSelect.value = 'custom';
 
@@ -661,12 +756,10 @@ class PulseCountersApp {
   getProcessedCounters() {
     let list = [...this.counters];
 
-    // Filter by Category
     if (this.activeCategory !== 'all') {
       list = list.filter(c => (c.category || '').toLowerCase() === this.activeCategory.toLowerCase());
     }
 
-    // Filter by Search Query
     if (this.searchQuery) {
       list = list.filter(c =>
         c.title.toLowerCase().includes(this.searchQuery) ||
@@ -674,7 +767,6 @@ class PulseCountersApp {
       );
     }
 
-    // Sorting
     switch (this.sortBy) {
       case 'count-desc':
         list.sort((a, b) => b.count - a.count);
@@ -693,7 +785,6 @@ class PulseCountersApp {
         break;
       case 'custom':
       default:
-        // Maintains array order
         break;
     }
 
@@ -705,12 +796,44 @@ class PulseCountersApp {
   // ==========================================
   render() {
     this.renderCategoryTabs();
-    this.renderCountersGrid();
+
+    const list = this.getProcessedCounters();
+    const hasItems = list.length > 0;
+
+    if (!hasItems) {
+      this.countersGrid.classList.add('hidden');
+      this.countersTableContainer.classList.add('hidden');
+      this.emptyState.classList.remove('hidden');
+
+      if (this.counters.length > 0) {
+        this.emptyStateTitle.textContent = 'Nenhum resultado encontrado';
+        this.emptyStateDesc.textContent = 'Nenhum contador corresponde à sua pesquisa ou filtro atual.';
+        this.emptyStateAddBtn.classList.add('hidden');
+      } else {
+        this.emptyStateTitle.textContent = 'Nenhum contador adicionado';
+        this.emptyStateDesc.textContent = 'Crie o seu primeiro indicador para começar a monitorar suas métricas corporativas!';
+        this.emptyStateAddBtn.classList.remove('hidden');
+      }
+      this.updateStats();
+      return;
+    }
+
+    this.emptyState.classList.add('hidden');
+
+    if (this.viewMode === 'grid') {
+      this.countersTableContainer.classList.add('hidden');
+      this.countersGrid.classList.remove('hidden');
+      this.renderCountersGrid(list);
+    } else {
+      this.countersGrid.classList.add('hidden');
+      this.countersTableContainer.classList.remove('hidden');
+      this.renderCountersTable(list);
+    }
+
     this.updateStats();
   }
 
   renderCategoryTabs() {
-    // Collect unique categories
     const categories = new Set();
     this.counters.forEach(c => {
       if (c.category && c.category.trim()) {
@@ -720,7 +843,6 @@ class PulseCountersApp {
 
     this.categoryTabs.innerHTML = '';
 
-    // "Todos" Tab
     const allBtn = document.createElement('button');
     allBtn.className = `tab-btn ${this.activeCategory === 'all' ? 'active' : ''}`;
     allBtn.textContent = `Todos (${this.counters.length})`;
@@ -743,26 +865,8 @@ class PulseCountersApp {
     });
   }
 
-  renderCountersGrid() {
-    const list = this.getProcessedCounters();
+  renderCountersGrid(list) {
     this.countersGrid.innerHTML = '';
-
-    if (list.length === 0) {
-      this.emptyState.classList.remove('hidden');
-      if (this.counters.length > 0) {
-        this.emptyStateTitle.textContent = 'Nenhum resultado encontrado';
-        this.emptyStateDesc.textContent = 'Nenhum contador corresponde à sua pesquisa ou filtro atual.';
-        this.emptyStateAddBtn.classList.add('hidden');
-      } else {
-        this.emptyStateTitle.textContent = 'Nenhum contador adicionado';
-        this.emptyStateDesc.textContent = 'Crie o seu primeiro contador manual para começar a monitorar suas metas!';
-        this.emptyStateAddBtn.classList.remove('hidden');
-      }
-      return;
-    }
-
-    this.emptyState.classList.add('hidden');
-
     list.forEach(counter => {
       const card = this.createCounterCardElement(counter);
       this.countersGrid.appendChild(card);
@@ -774,36 +878,37 @@ class PulseCountersApp {
     card.className = 'counter-card';
     card.id = `card_${counter.id}`;
 
-    // Color theme styling
     const colorObj = COLOR_THEMES.find(t => t.hex === counter.color) || {
-      hex: counter.color || '#6366f1',
-      glow: 'rgba(99, 102, 241, 0.4)'
+      hex: counter.color || '#2563eb',
+      glow: 'rgba(37, 99, 235, 0.25)'
     };
     card.style.setProperty('--card-accent', colorObj.hex);
-    card.style.setProperty('--card-accent-glow', colorObj.glow);
 
-    // Header section
     const step = counter.step || 1;
     const hasTarget = counter.target && counter.target > 0;
     const progressPercent = hasTarget ? Math.min(100, Math.max(0, Math.round((counter.count / counter.target) * 100))) : 0;
     const isCompleted = hasTarget && counter.count >= counter.target;
 
     card.innerHTML = `
-      <div class="counter-header">
-        <div class="counter-drag-handle" title="Segure e arraste para reordenar" aria-label="Arrastar">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="9" cy="5" r="1.2" fill="currentColor"></circle>
-            <circle cx="9" cy="12" r="1.2" fill="currentColor"></circle>
-            <circle cx="9" cy="19" r="1.2" fill="currentColor"></circle>
-            <circle cx="15" cy="5" r="1.2" fill="currentColor"></circle>
-            <circle cx="15" cy="12" r="1.2" fill="currentColor"></circle>
-            <circle cx="15" cy="19" r="1.2" fill="currentColor"></circle>
-          </svg>
-        </div>
+      <div class="card-accent-bar" style="background-color: ${colorObj.hex};"></div>
 
-        <div class="counter-info">
-          <h2 class="counter-title" title="${this.escapeHTML(counter.title)}">${this.escapeHTML(counter.title)}</h2>
-          ${counter.category ? `<span class="counter-category">${this.escapeHTML(counter.category)}</span>` : ''}
+      <div class="counter-header">
+        <div class="counter-header-left">
+          <div class="counter-drag-handle" title="Arrastar para reordenar" aria-label="Arrastar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="9" cy="6" r="1.2" fill="currentColor"></circle>
+              <circle cx="9" cy="12" r="1.2" fill="currentColor"></circle>
+              <circle cx="9" cy="18" r="1.2" fill="currentColor"></circle>
+              <circle cx="15" cy="6" r="1.2" fill="currentColor"></circle>
+              <circle cx="15" cy="12" r="1.2" fill="currentColor"></circle>
+              <circle cx="15" cy="18" r="1.2" fill="currentColor"></circle>
+            </svg>
+          </div>
+
+          <div class="counter-info">
+            <h2 class="counter-title" title="${this.escapeHTML(counter.title)}">${this.escapeHTML(counter.title)}</h2>
+            ${counter.category ? `<span class="counter-category">${this.escapeHTML(counter.category)}</span>` : ''}
+          </div>
         </div>
 
         <div class="counter-menu-actions">
@@ -828,49 +933,49 @@ class PulseCountersApp {
         </div>
       </div>
 
-      <!-- Main Number Display (Direct edit on click) -->
-      <div class="counter-display" id="display_${counter.id}" title="Clique para digitar um valor diretamente">
-        <span class="counter-value" id="val_${counter.id}">${counter.count}</span>
-        <span class="counter-edit-hint">Clique para editar</span>
+      <div class="counter-metric-row">
+        <div class="counter-display" id="display_${counter.id}" title="Clique para editar valor">
+          <span class="counter-value" id="val_${counter.id}">${counter.count}</span>
+          <span class="counter-edit-hint">Editar</span>
+        </div>
+
+        <div class="counter-controls">
+          <button class="btn-count-main minus" id="btnMinus_${counter.id}" aria-label="Diminuir ${step}">−</button>
+          <button class="btn-count-main plus" id="btnPlus_${counter.id}" aria-label="Aumentar ${step}">+</button>
+        </div>
       </div>
 
       ${hasTarget ? `
         <div class="counter-progress-box">
           <div class="progress-labels">
-            <span>Progresso: ${progressPercent}%</span>
-            <span>Meta: ${counter.target}</span>
+            <span class="progress-percent-badge ${isCompleted ? 'status-done' : ''}">
+              ${isCompleted ? '✓ Concluído' : `Progresso: ${progressPercent}%`}
+            </span>
+            <span class="progress-target-label">Meta: <strong>${counter.target}</strong></span>
           </div>
           <div class="progress-track">
-            <div class="progress-fill ${isCompleted ? 'goal-completed' : ''}" style="width: ${progressPercent}%"></div>
+            <div class="progress-fill ${isCompleted ? 'goal-completed' : ''}" style="width: ${progressPercent}%; background-color: ${colorObj.hex};"></div>
           </div>
         </div>
       ` : ''}
 
-      <!-- Main Count Action Controls -->
-      <div class="counter-controls">
-        <button class="btn-count-main minus" id="btnMinus_${counter.id}" aria-label="Diminuir ${step}">
-          −
-        </button>
-        <button class="btn-count-main plus" id="btnPlus_${counter.id}" aria-label="Aumentar ${step}">
-          +
-        </button>
-      </div>
-
-      <!-- Quick Steps -->
       <div class="counter-quick-steps">
-        <button class="btn-quick-step btn-step-m5" title="Subtrair 5">-5</button>
-        <button class="btn-quick-step btn-step-m1" title="Subtrair 1">-1</button>
-        <span class="counter-step-indicator" style="font-size:0.75rem; color:var(--text-dim);">Passo: ±${step}</span>
-        <button class="btn-quick-step btn-step-p1" title="Adicionar 1">+1</button>
-        <button class="btn-quick-step btn-step-p5" title="Adicionar 5">+5</button>
+        <div class="quick-step-group">
+          <button class="btn-quick-step btn-step-m5" title="Subtrair 5">-5</button>
+          <button class="btn-quick-step btn-step-m1" title="Subtrair 1">-1</button>
+        </div>
+        <span class="counter-step-indicator">Passo: ±${step}</span>
+        <div class="quick-step-group">
+          <button class="btn-quick-step btn-step-p1" title="Adicionar 1">+1</button>
+          <button class="btn-quick-step btn-step-p5" title="Adicionar 5">+5</button>
+        </div>
       </div>
     `;
 
-    // Event Listeners for this card
-    const displayEl = card.querySelector(`#display_${counter.id}`);
-    displayEl.addEventListener('click', () => this.enterDirectEdit(counter.id));
+    // Direct edit
+    card.querySelector(`#display_${counter.id}`).addEventListener('click', () => this.enterDirectEdit(counter.id));
 
-    // Minus & Plus
+    // Stepper
     card.querySelector(`#btnMinus_${counter.id}`).addEventListener('click', (e) => {
       e.stopPropagation();
       this.increment(counter.id, -step);
@@ -881,7 +986,7 @@ class PulseCountersApp {
       this.increment(counter.id, step);
     });
 
-    // Secondary steps
+    // Quick steps
     card.querySelector('.btn-step-m5').addEventListener('click', () => this.increment(counter.id, -5));
     card.querySelector('.btn-step-m1').addEventListener('click', () => this.increment(counter.id, -1));
     card.querySelector('.btn-step-p1').addEventListener('click', () => this.increment(counter.id, 1));
@@ -892,10 +997,117 @@ class PulseCountersApp {
     card.querySelector('.btn-edit-card').addEventListener('click', () => this.openCounterModal(counter.id));
     card.querySelector('.btn-delete-card').addEventListener('click', () => this.deleteCounter(counter.id));
 
-    // Enable Drag and Drop
     this.attachDragEvents(card, counter.id);
-
     return card;
+  }
+
+  // ==========================================
+  // Visualização 2: Tabela Corporativa (Table View)
+  // ==========================================
+  renderCountersTable(list) {
+    this.countersTableBody.innerHTML = '';
+
+    list.forEach(counter => {
+      const row = this.createCounterTableRow(counter);
+      this.countersTableBody.appendChild(row);
+    });
+  }
+
+  createCounterTableRow(counter) {
+    const row = document.createElement('tr');
+    row.className = 'corp-table-row';
+    row.id = `row_${counter.id}`;
+
+    const colorObj = COLOR_THEMES.find(t => t.hex === counter.color) || {
+      hex: counter.color || '#2563eb'
+    };
+
+    const step = counter.step || 1;
+    const hasTarget = counter.target && counter.target > 0;
+    const progressPercent = hasTarget ? Math.min(100, Math.max(0, Math.round((counter.count / counter.target) * 100))) : 0;
+    const isCompleted = hasTarget && counter.count >= counter.target;
+
+    row.innerHTML = `
+      <td style="text-align: center; width: 40px;">
+        <div class="counter-drag-handle" title="Arrastar">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="6" r="1.2" fill="currentColor"></circle>
+            <circle cx="9" cy="12" r="1.2" fill="currentColor"></circle>
+            <circle cx="9" cy="18" r="1.2" fill="currentColor"></circle>
+            <circle cx="15" cy="6" r="1.2" fill="currentColor"></circle>
+            <circle cx="15" cy="12" r="1.2" fill="currentColor"></circle>
+            <circle cx="15" cy="18" r="1.2" fill="currentColor"></circle>
+          </svg>
+        </div>
+      </td>
+      <td>
+        <div class="table-counter-title-group">
+          <span class="table-color-dot" style="background-color: ${colorObj.hex};"></span>
+          <span class="table-counter-title" title="${this.escapeHTML(counter.title)}">${this.escapeHTML(counter.title)}</span>
+        </div>
+      </td>
+      <td>
+        ${counter.category ? `<span class="counter-category">${this.escapeHTML(counter.category)}</span>` : '<span style="color:var(--text-dim);">-</span>'}
+      </td>
+      <td style="text-align: center;">
+        <button class="table-val-btn" id="display_table_${counter.id}" title="Clique para editar valor">
+          <strong id="val_table_${counter.id}">${counter.count}</strong>
+        </button>
+      </td>
+      <td>
+        ${hasTarget ? `
+          <div class="table-progress-wrap">
+            <div class="progress-track" style="height: 6px; width: 100px;">
+              <div class="progress-fill ${isCompleted ? 'goal-completed' : ''}" style="width: ${progressPercent}%; background-color: ${colorObj.hex};"></div>
+            </div>
+            <span class="table-progress-text">${progressPercent}% (${counter.target})</span>
+          </div>
+        ` : '<span style="color:var(--text-dim); font-size:0.8rem;">Sem meta</span>'}
+      </td>
+      <td style="text-align: center;">
+        <div class="table-stepper">
+          <button class="table-btn-step minus" id="btnTableMinus_${counter.id}" title="Diminuir ${step}">−</button>
+          <button class="table-btn-step plus" id="btnTablePlus_${counter.id}" title="Aumentar ${step}">+</button>
+        </div>
+      </td>
+      <td style="text-align: right;">
+        <div class="counter-menu-actions" style="justify-content: flex-end;">
+          <button class="card-action-btn btn-reset-table" title="Zerar" aria-label="Zerar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+            </svg>
+          </button>
+          <button class="card-action-btn btn-edit-table" title="Editar" aria-label="Editar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </button>
+          <button class="card-action-btn btn-delete-table" title="Excluir" aria-label="Excluir">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      </td>
+    `;
+
+    // Direct edit in table
+    row.querySelector(`#display_table_${counter.id}`).addEventListener('click', () => this.enterDirectEdit(counter.id));
+
+    // Stepper
+    row.querySelector(`#btnTableMinus_${counter.id}`).addEventListener('click', () => this.increment(counter.id, -step));
+    row.querySelector(`#btnTablePlus_${counter.id}`).addEventListener('click', () => this.increment(counter.id, step));
+
+    // Actions
+    row.querySelector('.btn-reset-table').addEventListener('click', () => this.resetCounter(counter.id));
+    row.querySelector('.btn-edit-table').addEventListener('click', () => this.openCounterModal(counter.id));
+    row.querySelector('.btn-delete-table').addEventListener('click', () => this.deleteCounter(counter.id));
+
+    this.attachDragEvents(row, counter.id);
+    return row;
   }
 
   // Direct Inline Value Edit
@@ -932,29 +1144,53 @@ class PulseCountersApp {
     });
   }
 
-  // Animate single card without full re-render
+  // Update card and table without full re-render
   updateCardDOM(counterId, bumpClass) {
     const counter = this.counters.find(c => c.id === counterId);
     if (!counter) return;
 
+    // Card View update
     const valEl = document.getElementById(`val_${counterId}`);
     if (valEl) {
       valEl.textContent = counter.count;
       valEl.classList.remove('bump-up', 'bump-down');
-      // Trigger reflow
       void valEl.offsetWidth;
       valEl.classList.add(bumpClass);
     }
 
-    // Update progress bar if exists
     const card = document.getElementById(`card_${counterId}`);
     if (card && counter.target) {
       const progressPercent = Math.min(100, Math.max(0, Math.round((counter.count / counter.target) * 100)));
       const fillEl = card.querySelector('.progress-fill');
-      const labelEl = card.querySelector('.progress-labels span:first-child');
-      if (fillEl && labelEl) {
+      const badgeEl = card.querySelector('.progress-percent-badge');
+      if (fillEl && badgeEl) {
         fillEl.style.width = `${progressPercent}%`;
-        labelEl.textContent = `Progresso: ${progressPercent}%`;
+        if (counter.count >= counter.target) {
+          fillEl.classList.add('goal-completed');
+          badgeEl.classList.add('status-done');
+          badgeEl.textContent = '✓ Concluído';
+        } else {
+          fillEl.classList.remove('goal-completed');
+          badgeEl.classList.remove('status-done');
+          badgeEl.textContent = `Progresso: ${progressPercent}%`;
+        }
+      }
+    }
+
+    // Table View update
+    const valTableEl = document.getElementById(`val_table_${counterId}`);
+    if (valTableEl) {
+      valTableEl.textContent = counter.count;
+    }
+
+    const row = document.getElementById(`row_${counterId}`);
+    if (row && counter.target) {
+      const progressPercent = Math.min(100, Math.max(0, Math.round((counter.count / counter.target) * 100)));
+      const fillEl = row.querySelector('.progress-fill');
+      const textEl = row.querySelector('.table-progress-text');
+      if (fillEl && textEl) {
+        fillEl.style.width = `${progressPercent}%`;
+        textEl.textContent = `${progressPercent}% (${counter.target})`;
         if (counter.count >= counter.target) {
           fillEl.classList.add('goal-completed');
         } else {
